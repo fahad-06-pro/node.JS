@@ -157,6 +157,8 @@ Create a new resolver.
     default timeout.
   * `tries` {integer} The number of tries the resolver will try contacting
     each name server before giving up. **Default:** `4`
+  * `maxTimeout` {integer} The number of max timeout in milliseconds when
+    retry, or `0` to use the default timeout. **Default:** `-1`
 
 ### `resolver.cancel()`
 
