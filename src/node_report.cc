@@ -680,6 +680,7 @@ static void PrintResourceUsage(JSONWriter* writer) {
     writer->json_objectend();
   }
   writer->json_objectend();
+  // Maybe we can remove this
 #ifdef RUSAGE_THREAD
   struct rusage stats;
   if (getrusage(RUSAGE_THREAD, &stats) == 0) {
@@ -700,6 +701,29 @@ static void PrintResourceUsage(JSONWriter* writer) {
     writer->json_objectstart("fsActivity");
     writer->json_keyvalue("reads", stats.ru_inblock);
     writer->json_keyvalue("writes", stats.ru_oublock);
+    writer->json_objectend();
+    writer->json_objectend();
+  }
+#else
+  uv_rusage_t t_stats;
+  if (uv_getrusage_thread(&t_stats) == 0) {
+    writer->json_objectstart("uvthreadResourceUsage");
+    double user_cpu =
+        t_stats.ru_utime.tv_sec + SEC_PER_MICROS * t_stats.ru_utime.tv_usec;
+    double kernel_cpu =
+        t_stats.ru_stime.tv_sec + SEC_PER_MICROS * t_stats.ru_stime.tv_usec;
+    writer->json_keyvalue("userCpuSeconds", user_cpu);
+    writer->json_keyvalue("kernelCpuSeconds", kernel_cpu);
+    double cpu_abs = user_cpu + kernel_cpu;
+    double cpu_percentage = (cpu_abs / uptime) * 100.0;
+    double user_cpu_percentage = (user_cpu / uptime) * 100.0;
+    double kernel_cpu_percentage = (kernel_cpu / uptime) * 100.0;
+    writer->json_keyvalue("cpuConsumptionPercent", cpu_percentage);
+    writer->json_keyvalue("userCpuConsumptionPercent", user_cpu_percentage);
+    writer->json_keyvalue("kernelCpuConsumptionPercent", kernel_cpu_percentage);
+    writer->json_objectstart("fsActivity");
+    writer->json_keyvalue("reads", t_stats.ru_inblock);
+    writer->json_keyvalue("writes", t_stats.ru_oublock);
     writer->json_objectend();
     writer->json_objectend();
   }
